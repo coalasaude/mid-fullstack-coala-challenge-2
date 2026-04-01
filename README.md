@@ -6,7 +6,7 @@ Olá! Bem-vindo(a) ao nosso desafio técnico. Este projeto foi desenhado para si
 
 O desafio consiste em construir o MVP (Produto Mínimo Viável) de um sistema que chamaremos de **"HealthFlow"**, uma plataforma para orquestrar o processamento e laudo de exames de imagem médica.
 
-*   **Prazo:** O desafio começa no dia **12 de novembro** e a entrega final deve ser feita até o final do dia **19 de novembro**.
+*   **Prazo:** O desafio começa no dia **2 de abril** e a entrega final deve ser feita até o final do dia **9 de abril**.
 *   **Entrega:** Ao finalizar, abra um Pull Request no repositório. No corpo do PR, você encontrará um template com seções a serem preenchidas sobre suas decisões de arquitetura e instruções de como rodar o projeto.
 
 **Contexto do Problema**
