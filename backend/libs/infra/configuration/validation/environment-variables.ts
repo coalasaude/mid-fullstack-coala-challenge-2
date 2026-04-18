@@ -40,5 +40,41 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   JWT_EXPIRES_IN?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  RABBITMQ_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  EXAM_PROCESSING_QUEUE?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  EXAM_PROCESSING_DLQ?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  AWS_ACCESS_KEY_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  AWS_SECRET_ACCESS_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  AWS_REGION?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  AWS_BUCKET?: string;
 }
