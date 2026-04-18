@@ -31,6 +31,7 @@ model User {
 
   uploadedMedicalExams MedicalExam[] @relation("MedicalExamUploadedBy")
   reportedMedicalExams MedicalExam[] @relation("MedicalExamReportedBy")
+  userAccesses         UserAccess[]
 }
 
 model MedicalExam {
@@ -49,4 +50,20 @@ model MedicalExam {
 
   uploadedBy User  @relation("MedicalExamUploadedBy", fields: [uploadedById], references: [id])
   reportedBy User? @relation("MedicalExamReportedBy", fields: [reportedById], references: [id])
+}
+
+model UserAccess {
+  id          String   @id @default(uuid())
+  userId      String
+  module      String
+  useCase     String
+  action      String
+  description String
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([module, useCase])
 }
