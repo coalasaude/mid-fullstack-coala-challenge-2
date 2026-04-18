@@ -8,7 +8,7 @@ import { ConfigurationModule } from './configuration';
 import { ApiHealthCheck, DatabaseHealthCheck } from './health-check';
 import { HealthController } from './health-check/health.controller';
 import { PrismaModule } from './database';
-import { ProvidersModule } from '../providers/src/providers.module';
+import { ProvidersModule } from '@healthflow/providers';
 
 @Module({
   imports: [

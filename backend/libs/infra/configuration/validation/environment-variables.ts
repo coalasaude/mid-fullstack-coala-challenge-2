@@ -3,6 +3,7 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Matches,
   Min,
@@ -32,4 +33,12 @@ export class EnvironmentVariables {
       'DATABASE_URL must be a postgres or postgresql URL (e.g. postgresql://user:pass@host:5432/db?schema=public)',
   })
   DATABASE_URL!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_SECRET!: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_EXPIRES_IN?: string;
 }
