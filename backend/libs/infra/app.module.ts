@@ -8,12 +8,14 @@ import { ConfigurationModule } from './configuration';
 import { ApiHealthCheck, DatabaseHealthCheck } from './health-check';
 import { HealthController } from './health-check/health.controller';
 import { PrismaModule } from './database';
+import { MessagingModule } from './messaging';
 import { ProvidersModule } from '@healthflow/providers';
 
 @Module({
   imports: [
     ConfigurationModule.register(),
     PrismaModule,
+    MessagingModule,
     TerminusModule,
     ProvidersModule,
     SharedModule,
