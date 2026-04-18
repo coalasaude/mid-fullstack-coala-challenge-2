@@ -1,12 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { basename } from 'path';
-import {
-  IObjectStorageProvider,
-  isErr,
-  isOk,
-  ok,
-  Result,
-} from '@healthflow/shared';
+import { IObjectStorageProvider, isErr, ok, Result } from '@healthflow/shared';
 import { MedicalExam } from '../../domain/entities/medical-exam.entity';
 import { ExamProcessingQueuePort } from '../../domain/ports/exam-processing-queue.port';
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
@@ -30,11 +24,11 @@ export class UploadExamUseCase {
 
     const objectKeyResult = await this.getObjectKey(exam, command.fileBuffer);
 
-    if (!isOk(objectKeyResult)) {
-      return objectKeyResult;
+    if (isErr(objectKeyResult)) {
+      throw new InternalServerErrorException(objectKeyResult.error);
     }
 
-    const { value: storageKey } = objectKeyResult;
+    const storageKey = objectKeyResult.ok ? objectKeyResult.value : undefined;
     exam.setStoragePath(storageKey as string);
 
     const updatedExam = await this.medicalExamRepository.persist(exam);
@@ -42,7 +36,7 @@ export class UploadExamUseCase {
     const publishExamQueuedResult =
       await this.examProcessingQueue.publishExamQueued(updatedExam.id);
     if (isErr(publishExamQueuedResult)) {
-      return publishExamQueuedResult;
+      throw new InternalServerErrorException(publishExamQueuedResult.error);
     }
 
     return {

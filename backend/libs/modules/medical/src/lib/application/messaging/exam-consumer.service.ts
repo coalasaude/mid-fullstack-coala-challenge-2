@@ -60,10 +60,12 @@ export class ExamConsumerService implements OnModuleInit {
 
     const success = Math.random() < 0.85;
     if (success) {
+      this.logger.log(`Exam ${examId} processed successfully (simulated).`);
       exam.markDone('Processing completed successfully (simulated).');
       await this.medicalExamRepository.persist(exam);
       return;
     }
+    this.logger.error(`Exam ${examId} processed with failure (simulated).`);
     exam.markError('Simulated processing failure.');
     await this.medicalExamRepository.persist(exam);
   }

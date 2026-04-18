@@ -30,13 +30,8 @@ export class ListExamsUseCase {
       id: exam.id,
       status: exam.status,
       fileName: exam.fileName,
-      mimeType: exam.mimeType,
-      fileSize: exam.fileSize,
-      storagePath: exam.storagePath,
-      processingResult: exam.processingResult,
       report: exam.report,
       createdAt: exam.createdAt,
-      updatedAt: exam.updatedAt,
     }));
   }
 }
