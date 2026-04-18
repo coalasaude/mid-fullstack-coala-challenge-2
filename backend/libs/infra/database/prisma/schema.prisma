@@ -28,6 +28,9 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   lastAccessAt DateTime?
+
+  uploadedMedicalExams MedicalExam[] @relation("MedicalExamUploadedBy")
+  reportedMedicalExams MedicalExam[] @relation("MedicalExamReportedBy")
 }
 
 model MedicalExam {
@@ -39,6 +42,11 @@ model MedicalExam {
   storagePath      String?
   processingResult String?
   report           String?
+  uploadedById     String
+  reportedById     String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+
+  uploadedBy User  @relation("MedicalExamUploadedBy", fields: [uploadedById], references: [id])
+  reportedBy User? @relation("MedicalExamReportedBy", fields: [reportedById], references: [id])
 }
