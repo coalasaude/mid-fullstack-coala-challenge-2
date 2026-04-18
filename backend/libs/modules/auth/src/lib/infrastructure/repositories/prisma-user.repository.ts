@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { Option, ERole } from '@healthflow/shared';
+import { Option } from '@healthflow/shared';
 import { User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { Email } from '../../domain/value-objects/email';
@@ -12,14 +12,12 @@ export class PrismaUserRepository extends UserRepository {
     super();
   }
 
-  async create(input: {
-    email: Email;
-    passwordHash: string;
-    role: ERole;
-  }): Promise<User> {
-    const user = User.create(input);
-    const row = await this.prisma.user.create({
-      data: UserMapper.toPersistence(user),
+  async persist(user: User): Promise<User> {
+    const data = UserMapper.toPersistence(user);
+    const row = await this.prisma.user.upsert({
+      where: { id: user.id },
+      create: data,
+      update: data,
     });
     return UserMapper.toDomain(row);
   }
