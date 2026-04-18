@@ -15,10 +15,12 @@ export interface IConfiguration {
   };
   examProcessing: {
     queue: string;
+    retryQueue: string;
     dlq: string;
   };
   userAccessLog: {
     queue: string;
+    retryQueue: string;
     dlq: string;
   };
   aws: {
@@ -44,11 +46,13 @@ export const configuration = (): IConfiguration => ({
   },
   examProcessing: {
     queue: process.env.EXAM_PROCESSING_QUEUE ?? '',
+    retryQueue: process.env.EXAM_PROCESSING_RETRY_QUEUE ?? '',
     dlq: process.env.EXAM_PROCESSING_DLQ ?? '',
   },
   userAccessLog: {
-    queue: process.env.USER_ACCESS_LOG_QUEUE ?? 'user-access-log.events',
-    dlq: process.env.USER_ACCESS_LOG_DLQ ?? 'user-access-log.events.dlq',
+    queue: process.env.USER_ACCESS_LOG_QUEUE ?? '',
+    retryQueue: process.env.USER_ACCESS_LOG_RETRY_QUEUE ?? '',
+    dlq: process.env.USER_ACCESS_LOG_DLQ ?? '',
   },
   aws: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',

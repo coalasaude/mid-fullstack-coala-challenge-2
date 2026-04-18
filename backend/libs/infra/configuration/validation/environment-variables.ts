@@ -61,12 +61,22 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  EXAM_PROCESSING_RETRY_QUEUE?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
   USER_ACCESS_LOG_QUEUE?: string;
 
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   USER_ACCESS_LOG_DLQ?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  USER_ACCESS_LOG_RETRY_QUEUE?: string;
 
   @IsOptional()
   @IsString()

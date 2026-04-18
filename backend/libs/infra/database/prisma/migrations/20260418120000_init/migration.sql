@@ -52,6 +52,22 @@ CREATE TABLE "UserAccessLog" (
     CONSTRAINT "UserAccessLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "FailedMessage" (
+    "id" TEXT NOT NULL,
+    "queue" TEXT NOT NULL,
+    "payload" JSONB NOT NULL,
+    "headers" JSONB,
+    "errorMessage" TEXT NOT NULL,
+    "errorStack" TEXT,
+    "attempts" INTEGER NOT NULL,
+    "firstFailedAt" TIMESTAMP(3) NOT NULL,
+    "lastFailedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "FailedMessage_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -60,6 +76,9 @@ CREATE INDEX "UserAccessLog_userId_createdAt_idx" ON "UserAccessLog"("userId", "
 
 -- CreateIndex
 CREATE INDEX "UserAccessLog_module_useCase_idx" ON "UserAccessLog"("module", "useCase");
+
+-- CreateIndex
+CREATE INDEX "FailedMessage_queue_createdAt_idx" ON "FailedMessage"("queue", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "MedicalExam" ADD CONSTRAINT "MedicalExam_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -4,7 +4,7 @@ import { MessageBroker } from '@healthflow/infra';
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
 
 function randomDelayMs(): number {
-  return 500 + Math.floor(Math.random() * 2000);
+  return 1000 + Math.floor(Math.random() * 2000);
 }
 
 function delay(ms: number): Promise<void> {
@@ -32,13 +32,16 @@ export class ExamConsumerService implements OnModuleInit {
     const mainQueue = this.configService.getOrThrow<string>(
       'examProcessing.queue',
     );
+    const retryQueue = this.configService.getOrThrow<string>(
+      'examProcessing.retryQueue',
+    );
     const dlq = this.configService.getOrThrow<string>('examProcessing.dlq');
 
-    await this.broker.ensureQueueWithDeadLetter(mainQueue, dlq);
+    await this.broker.ensureRetryTopology(mainQueue, retryQueue, dlq);
 
     await this.broker.consumeQueue(
       mainQueue,
-      async (body) => {
+      async ({ body }) => {
         const parsed = JSON.parse(body.toString()) as { examId?: string };
         if (!parsed.examId) {
           return;
@@ -49,7 +52,7 @@ export class ExamConsumerService implements OnModuleInit {
     );
   }
 
-  private async processExam(examId: string): Promise<void> {
+  async processExam(examId: string): Promise<void> {
     const exam = await this.medicalExamRepository.findById(examId);
     if (!exam) return;
 
@@ -58,15 +61,17 @@ export class ExamConsumerService implements OnModuleInit {
 
     await delay(randomDelayMs());
 
-    const success = Math.random() < 0.85;
+    const randomNumber = Math.random();
+    const success = randomNumber < 0.8;
+
     if (success) {
       this.logger.log(`Exam ${examId} processed successfully (simulated).`);
       exam.markDone('Processing completed successfully (simulated).');
       await this.medicalExamRepository.persist(exam);
       return;
     }
-    this.logger.error(`Exam ${examId} processed with failure (simulated).`);
     exam.markError('Simulated processing failure.');
     await this.medicalExamRepository.persist(exam);
+    throw new Error(`Simulated processing failure (exam ${examId})`);
   }
 }

@@ -1,3 +1,13 @@
+export interface ConsumedMessage {
+  body: Buffer;
+  headers: Record<string, unknown>;
+}
+
+export interface PublishOptions {
+  headers?: Record<string, unknown>;
+  expirationMs?: number;
+}
+
 export abstract class MessageBroker {
   abstract get ready(): boolean;
 
@@ -5,16 +15,21 @@ export abstract class MessageBroker {
 
   abstract disconnect(): Promise<void>;
 
-  abstract ensureQueueWithDeadLetter(
+  abstract ensureRetryTopology(
     mainQueue: string,
+    retryQueue: string,
     deadLetterQueue: string,
   ): Promise<void>;
 
-  abstract publishToQueue(queue: string, body: Buffer): Promise<void>;
+  abstract publishToQueue(
+    queue: string,
+    body: Buffer,
+    options?: PublishOptions,
+  ): Promise<void>;
 
   abstract consumeQueue(
     queue: string,
-    handler: (body: Buffer) => Promise<void>,
+    handler: (message: ConsumedMessage) => Promise<void>,
     options?: { prefetch?: number },
   ): Promise<void>;
 }

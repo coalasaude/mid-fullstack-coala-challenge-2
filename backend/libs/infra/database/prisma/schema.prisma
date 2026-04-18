@@ -67,3 +67,18 @@ model UserAccessLog {
   @@index([userId, createdAt])
   @@index([module, useCase])
 }
+
+model FailedMessage {
+  id            String   @id @default(uuid())
+  queue         String
+  payload       Json
+  headers       Json?
+  errorMessage  String
+  errorStack    String?
+  attempts      Int
+  firstFailedAt DateTime
+  lastFailedAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([queue, createdAt])
+}

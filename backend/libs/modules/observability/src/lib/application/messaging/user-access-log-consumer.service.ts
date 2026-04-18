@@ -25,13 +25,16 @@ export class UserAccessLogConsumerService implements OnModuleInit {
     const mainQueue = this.configService.getOrThrow<string>(
       'userAccessLog.queue',
     );
+    const retryQueue = this.configService.getOrThrow<string>(
+      'userAccessLog.retryQueue',
+    );
     const dlq = this.configService.getOrThrow<string>('userAccessLog.dlq');
 
-    await this.broker.ensureQueueWithDeadLetter(mainQueue, dlq);
+    await this.broker.ensureRetryTopology(mainQueue, retryQueue, dlq);
 
     await this.broker.consumeQueue(
       mainQueue,
-      async (body) => {
+      async ({ body }) => {
         const parsed = JSON.parse(body.toString()) as UserAccessLogEventDto;
         if (
           !parsed?.module ||
@@ -41,8 +44,9 @@ export class UserAccessLogConsumerService implements OnModuleInit {
           !parsed?.description ||
           !parsed?.occurredAt
         ) {
+          const preview = body.toString().slice(0, 120);
           this.logger.warn(
-            `Ignoring malformed user-access-log event: ${body.toString()}`,
+            `Malformed user-access-log event (preview): ${preview}${body.length > 120 ? '…' : ''}`,
           );
           return;
         }

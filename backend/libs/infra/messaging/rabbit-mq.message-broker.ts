@@ -7,8 +7,28 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Channel, ChannelModel } from 'amqplib';
 import { connect } from 'amqplib';
+import type { ConsumedMessage, PublishOptions } from './message-broker';
 import { MessageBroker } from './message-broker';
 import { Option } from '@healthflow/shared';
+
+function normalizeHeaders(
+  raw: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (Buffer.isBuffer(v)) {
+      out[k] = v.toString('utf8');
+    } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      out[k] = normalizeHeaders(v as Record<string, unknown>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
 
 @Injectable()
 export class RabbitMqMessageBroker
@@ -66,50 +86,69 @@ export class RabbitMqMessageBroker
     }
   }
 
-  async ensureQueueWithDeadLetter(
+  async ensureRetryTopology(
     mainQueue: string,
+    retryQueue: string,
     deadLetterQueue: string,
   ): Promise<void> {
     if (!this.publishChannel || !this.consumeChannel) {
       throw new Error('RabbitMQ channels are not available');
     }
 
-    await this.publishChannel.assertQueue(deadLetterQueue, { durable: true });
-    await this.publishChannel.assertQueue(mainQueue, {
-      durable: true,
-      arguments: {
-        'x-dead-letter-exchange': '',
-        'x-dead-letter-routing-key': deadLetterQueue,
-      },
-    });
+    const assertTopology = async (ch: Channel) => {
+      await ch.assertQueue(deadLetterQueue, { durable: true });
+      await ch.assertQueue(mainQueue, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': '',
+          'x-dead-letter-routing-key': deadLetterQueue,
+        },
+      });
+      await ch.assertQueue(retryQueue, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': '',
+          'x-dead-letter-routing-key': mainQueue,
+        },
+      });
+    };
 
-    await this.consumeChannel.assertQueue(deadLetterQueue, { durable: true });
-    await this.consumeChannel.assertQueue(mainQueue, {
-      durable: true,
-      arguments: {
-        'x-dead-letter-exchange': '',
-        'x-dead-letter-routing-key': deadLetterQueue,
-      },
-    });
+    await assertTopology(this.publishChannel);
+    await assertTopology(this.consumeChannel);
 
     this.logger.log(
-      `Queues asserted: "${mainQueue}" with DLQ "${deadLetterQueue}"`,
+      `Retry topology asserted: main="${mainQueue}", retry="${retryQueue}", dlq="${deadLetterQueue}"`,
     );
   }
 
-  async publishToQueue(queue: string, body: Buffer): Promise<void> {
+  async publishToQueue(
+    queue: string,
+    body: Buffer,
+    options?: PublishOptions,
+  ): Promise<void> {
     if (!this.publishChannel) {
       return Promise.reject(
         new Error('RabbitMQ publish channel is not available'),
       );
     }
-    this.publishChannel.sendToQueue(queue, body, { persistent: true });
+    const publishOptions: {
+      persistent: boolean;
+      headers?: Record<string, unknown>;
+      expiration?: string;
+    } = { persistent: true };
+    if (options?.headers) {
+      publishOptions.headers = options.headers;
+    }
+    if (options?.expirationMs !== undefined) {
+      publishOptions.expiration = String(options.expirationMs);
+    }
+    this.publishChannel.sendToQueue(queue, body, publishOptions);
     return Promise.resolve();
   }
 
   async consumeQueue(
     queue: string,
-    handler: (body: Buffer) => Promise<void>,
+    handler: (message: ConsumedMessage) => Promise<void>,
     options?: { prefetch?: number },
   ): Promise<void> {
     if (!this.consumeChannel) {
@@ -129,11 +168,19 @@ export class RabbitMqMessageBroker
           if (!msg || !this.consumeChannel) {
             return;
           }
+          const consumed: ConsumedMessage = {
+            body: msg.content,
+            headers: normalizeHeaders(
+              msg.properties.headers as Record<string, unknown> | undefined,
+            ),
+          };
           try {
-            await handler(msg.content);
+            await handler(consumed);
             this.consumeChannel.ack(msg);
-          } catch (err) {
-            this.logger.error('Message consumer handler error', err);
+          } catch (error) {
+            this.logger.warn(
+              `Queue "${queue}" → ${error instanceof Error ? error.message : String(error)}`,
+            );
             this.consumeChannel.nack(msg, false, false);
           }
         })();
