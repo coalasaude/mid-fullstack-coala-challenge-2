@@ -3,6 +3,7 @@ import { IPasswordHasherProvider } from '@healthflow/shared';
 import { User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { CreateUserCommand } from '../commands/create-user.command';
+import { CreateUserResponseDto } from '../../presentation/http/dto/create-user-response.dto';
 
 @Injectable()
 export class CreateUserUseCase {
@@ -28,11 +29,11 @@ export class CreateUserUseCase {
 
     const createdUser = await this.userRepository.persist(user);
 
-    return {
+    return new CreateUserResponseDto({
       id: createdUser.id,
       email: createdUser.email.value,
       role: createdUser.role,
       createdAt: createdUser.createdAt,
-    };
+    });
   }
 }

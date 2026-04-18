@@ -9,6 +9,7 @@ import { MedicalExam } from '../../domain/entities/medical-exam.entity';
 import { ExamProcessingQueuePort } from '../../domain/ports/exam-processing-queue.port';
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
 import { UploadExamCommand } from '../commands/upload-exam.command';
+import { UploadExamResponseDto } from '../../presentation/http/dto/upload-exam-response.dto';
 
 @Injectable()
 export class UploadExamUseCase {
@@ -45,11 +46,11 @@ export class UploadExamUseCase {
       throw new InternalServerErrorException(publishExamQueuedResult.error);
     }
 
-    const result = {
+    const result = new UploadExamResponseDto({
       id: updatedExam.id,
       status: updatedExam.status,
       processingResult: updatedExam.processingResult,
-    };
+    });
 
     await this.userAccessLogEvents.publish({
       module: 'medical',

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { ERole } from '@healthflow/shared';
 import {
   IsEmail,
@@ -8,10 +9,12 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
+  @ApiProperty({ example: 'attendant@healthflow.com' })
   @IsEmail()
   @IsNotEmpty()
   email!: string;
 
+  @ApiProperty({ example: 'Password1!' })
   @IsString()
   @IsNotEmpty()
   @Matches(
@@ -23,6 +26,7 @@ export class CreateUserDto {
   )
   password!: string;
 
+  @ApiProperty({ enum: ERole, example: ERole.ATTENDANT })
   @IsEnum(ERole)
   @IsNotEmpty()
   role!: ERole;

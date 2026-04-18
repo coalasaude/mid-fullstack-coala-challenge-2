@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { IPasswordHasherProvider } from '@healthflow/shared';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { LoginCommand } from '../commands/login.command';
+import { LoginResponseDto } from '../../presentation/http/dto/login-response.dto';
 
 @Injectable()
 export class LoginUseCase {
@@ -37,11 +38,11 @@ export class LoginUseCase {
       role: user.role,
     });
 
-    return {
+    return new LoginResponseDto({
       id: user.id,
       email: user.email.value,
       role: user.role,
       access_token,
-    };
+    });
   }
 }

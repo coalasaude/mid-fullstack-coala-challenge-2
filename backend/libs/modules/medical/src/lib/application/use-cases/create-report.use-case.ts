@@ -10,6 +10,8 @@ import {
 } from '@healthflow/observability';
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
 import { CreateReportCommand } from '../commands/create-report.command';
+import { CreateReportResponseDto } from '../../presentation/http/dto/create-report-response.dto';
+import { ExamUserDto } from '../../presentation/http/dto/exam-user.dto';
 
 @Injectable()
 export class CreateReportUseCase {
@@ -32,7 +34,7 @@ export class CreateReportUseCase {
 
     const updatedExam = await this.medicalExamRepository.persist(exam);
 
-    const result = {
+    const result = new CreateReportResponseDto({
       id: updatedExam.id,
       status: updatedExam.status,
       fileName: updatedExam.fileName,
@@ -43,17 +45,17 @@ export class CreateReportUseCase {
       report: updatedExam.report,
       createdAt: updatedExam.createdAt,
       updatedAt: updatedExam.updatedAt,
-      reportedBy: {
+      reportedBy: new ExamUserDto({
         id: updatedExam.reportedBy?.id,
         email: updatedExam.reportedBy?.email,
         role: updatedExam.reportedBy?.role,
-      },
-      uploadedBy: {
+      }),
+      uploadedBy: new ExamUserDto({
         id: updatedExam.uploadedBy.id,
         email: updatedExam.uploadedBy.email,
         role: updatedExam.uploadedBy.role,
-      },
-    };
+      }),
+    });
 
     await this.userAccessLogEvents.publish({
       module: 'medical',
