@@ -15,9 +15,9 @@ import {
   CurrentUser,
   ERole,
   JwtAuthGuard,
-  JwtValidatedUser,
   Roles,
   RolesGuard,
+  type LoggedUser,
 } from '@healthflow/shared';
 import type { IMemoryUploadedFile } from '../../../../../../shared/src/lib/types/memory-uploaded-file.interface';
 import { CreateReportUseCase } from '../../../application/use-cases/create-report.use-case';
@@ -42,7 +42,10 @@ export class ExamsController {
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }),
   )
-  async upload(@UploadedFile() file: IMemoryUploadedFile | undefined) {
+  async upload(
+    @UploadedFile() file: IMemoryUploadedFile | undefined,
+    @CurrentUser() user: LoggedUser,
+  ) {
     if (!file?.buffer?.length) {
       throw new BadRequestException('File is required');
     }
@@ -52,14 +55,15 @@ export class ExamsController {
         file.mimetype,
         file.size,
         file.buffer,
+        user,
       ),
     );
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async list(@CurrentUser() user: JwtValidatedUser) {
-    return this.listExamsUseCase.execute(new ListExamsCommand(user.role));
+  async list(@CurrentUser() user: LoggedUser) {
+    return this.listExamsUseCase.execute(new ListExamsCommand(user));
   }
 
   @Post(':id/report')
@@ -68,9 +72,10 @@ export class ExamsController {
   async createReport(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateReportDto,
+    @CurrentUser() user: LoggedUser,
   ) {
     return this.createReportUseCase.execute(
-      new CreateReportCommand(id, dto.report),
+      new CreateReportCommand(id, dto.report, user),
     );
   }
 }

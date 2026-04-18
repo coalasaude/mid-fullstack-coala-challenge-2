@@ -1,13 +1,27 @@
 import {
-  MedicalExam as PrismaMedicalExam,
   MedicalExamStatus as PrismaMedicalExamStatus,
+  Prisma,
+  type User as PrismaUser,
 } from '@prisma/client';
-import { Option } from '@healthflow/shared';
+import { ERole } from '@healthflow/shared';
 import { MedicalExam } from '../../domain/entities/medical-exam.entity';
+import { User } from '../../domain/entities/user.entity';
 import { EMedicalExamStatus } from '../../domain/enums/medical-exam-status.enum';
 
+export type MedicalExamRow = Prisma.MedicalExamGetPayload<{
+  include: { uploadedBy: true; reportedBy: true };
+}>;
+
 export class MedicalExamMapper {
-  static toDomain(row: PrismaMedicalExam): MedicalExam {
+  private static userToDomain(row: PrismaUser): User {
+    return new User({
+      id: row.id,
+      email: row.email,
+      role: row.role as ERole,
+    });
+  }
+
+  static toDomain(row: MedicalExamRow): MedicalExam {
     return new MedicalExam({
       id: row.id,
       status: row.status as EMedicalExamStatus,
@@ -17,23 +31,16 @@ export class MedicalExamMapper {
       storagePath: row.storagePath,
       processingResult: row.processingResult,
       report: row.report,
+      uploadedBy: MedicalExamMapper.userToDomain(row.uploadedBy),
+      reportedBy: row.reportedBy
+        ? MedicalExamMapper.userToDomain(row.reportedBy)
+        : null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
   }
 
-  static toPersistence(exam: MedicalExam): {
-    id: string;
-    status: PrismaMedicalExamStatus;
-    fileName: string;
-    mimeType: string;
-    fileSize: number;
-    storagePath: Option<string>;
-    processingResult: Option<string>;
-    report: Option<string>;
-    createdAt: Date;
-    updatedAt: Date;
-  } {
+  static toPersistenceUnchecked(exam: MedicalExam) {
     return {
       id: exam.id,
       status: exam.status as PrismaMedicalExamStatus,
@@ -43,6 +50,8 @@ export class MedicalExamMapper {
       storagePath: exam.storagePath,
       processingResult: exam.processingResult,
       report: exam.report,
+      uploadedById: exam.uploadedBy.id,
+      reportedById: exam.reportedBy?.id ?? null,
       createdAt: exam.createdAt,
       updatedAt: exam.updatedAt,
     };

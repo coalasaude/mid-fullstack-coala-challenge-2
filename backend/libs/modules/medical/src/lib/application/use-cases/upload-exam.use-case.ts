@@ -20,6 +20,7 @@ export class UploadExamUseCase {
       mimeType: command.mimeType,
       fileSize: command.fileSize,
       storagePath: null,
+      uploadedBy: command.uploadedBy,
     });
 
     const objectKeyResult = await this.getObjectKey(exam, command.fileBuffer);

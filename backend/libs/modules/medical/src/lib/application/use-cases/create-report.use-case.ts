@@ -17,7 +17,7 @@ export class CreateReportUseCase {
       throw new NotFoundException('Exam not found');
     }
 
-    const errorOrVoid = exam.reportTo(command.report);
+    const errorOrVoid = exam.reportTo(command.report, command.reportedBy);
 
     if (isErr(errorOrVoid)) {
       throw new BadRequestException(errorOrVoid.error as string);
@@ -36,6 +36,16 @@ export class CreateReportUseCase {
       report: updatedExam.report,
       createdAt: updatedExam.createdAt,
       updatedAt: updatedExam.updatedAt,
+      reportedBy: {
+        id: updatedExam.reportedBy?.id,
+        email: updatedExam.reportedBy?.email,
+        role: updatedExam.reportedBy?.role,
+      },
+      uploadedBy: {
+        id: updatedExam.uploadedBy.id,
+        email: updatedExam.uploadedBy.email,
+        role: updatedExam.uploadedBy.role,
+      },
     };
   }
 }

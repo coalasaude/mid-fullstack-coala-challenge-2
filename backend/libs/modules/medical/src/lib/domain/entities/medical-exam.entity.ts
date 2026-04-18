@@ -2,6 +2,7 @@ import { Entity, err, ok, Option, Result } from '@healthflow/shared';
 import { randomUUID } from 'crypto';
 import { MedicalExamReportError } from '../errors';
 import { EMedicalExamStatus } from '../enums/medical-exam-status.enum';
+import { User } from './user.entity';
 
 export interface MedicalExamProps {
   id: string;
@@ -12,6 +13,8 @@ export interface MedicalExamProps {
   storagePath: Option<string>;
   processingResult: Option<string>;
   report: Option<string>;
+  uploadedBy: User;
+  reportedBy: Option<User>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +48,14 @@ export class MedicalExam extends Entity<MedicalExamProps> {
     return this.props.report;
   }
 
+  get uploadedBy(): User {
+    return this.props.uploadedBy;
+  }
+
+  get reportedBy(): Option<User> {
+    return this.props.reportedBy;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -58,6 +69,7 @@ export class MedicalExam extends Entity<MedicalExamProps> {
     mimeType: string;
     fileSize: number;
     storagePath: Option<string>;
+    uploadedBy: User;
   }): MedicalExam {
     const now = new Date();
     return new MedicalExam({
@@ -69,6 +81,8 @@ export class MedicalExam extends Entity<MedicalExamProps> {
       storagePath: input.storagePath,
       processingResult: null,
       report: null,
+      uploadedBy: input.uploadedBy,
+      reportedBy: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -96,11 +110,15 @@ export class MedicalExam extends Entity<MedicalExamProps> {
     this.props.updatedAt = new Date();
   }
 
-  reportTo(report: string): Result<void, MedicalExamReportError> {
+  reportTo(
+    report: string,
+    reportedBy: User,
+  ): Result<void, MedicalExamReportError> {
     if (this.props.status !== EMedicalExamStatus.DONE) {
       return err(MedicalExamReportError.notInDoneStatus);
     }
     this.props.report = report;
+    this.props.reportedBy = reportedBy;
     this.props.status = EMedicalExamStatus.REPORTED;
     this.props.updatedAt = new Date();
     return ok(undefined);

@@ -1,16 +1,17 @@
-import { ERole } from '@healthflow/shared';
+import { LoggedUser } from '@healthflow/shared';
+import { User } from '../../domain/entities/user.entity';
 
 export class ListExamsCommand {
-  private readonly _requesterRole: ERole;
+  private readonly _user: User;
 
-  constructor(requesterRole: ERole) {
-    if (!requesterRole) {
-      throw new Error('Requester role is required');
+  constructor(user: LoggedUser) {
+    if (!user) {
+      throw new Error('User is required');
     }
-    this._requesterRole = requesterRole;
+    this._user = User.fromPrimitives(user);
   }
 
-  get requesterRole(): ERole {
-    return this._requesterRole;
+  get user(): User {
+    return this._user;
   }
 }
