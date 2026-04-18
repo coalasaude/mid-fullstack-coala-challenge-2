@@ -1,2 +1,11 @@
 export * from './lib/shared.module';
-
+export * from './lib/domain/entity';
+export * from './lib/domain/value-object';
+export * from './lib/enums/role.enum';
+export * from './lib/constants/roles-metadata.constant';
+export * from './lib/decorators/roles.decorator';
+export * from './lib/guards/jwt-auth.guard';
+export * from './lib/guards/roles.guard';
+export * from './lib/types/option';
+export * from './lib/ports/password-hasher.port';
+export * from './lib/strategies/jwt.strategy';
