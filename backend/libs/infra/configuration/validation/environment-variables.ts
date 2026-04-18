@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   Min,
 } from 'class-validator';
@@ -97,4 +98,10 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   AWS_BUCKET?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @IsUrl()
+  AWS_BUCKET_URL?: string;
 }

@@ -7,9 +7,10 @@ import { ERole } from '@healthflow/shared';
 import { MedicalExam } from '../../domain/entities/medical-exam.entity';
 import { User } from '../../domain/entities/user.entity';
 import { EMedicalExamStatus } from '../../domain/enums/medical-exam-status.enum';
+import { ExamDocumentMapper } from './exam-document.mapper';
 
 export type MedicalExamRow = Prisma.MedicalExamGetPayload<{
-  include: { uploadedBy: true; reportedBy: true };
+  include: { uploadedBy: true; reportedBy: true; examDocument: true };
 }>;
 
 export class MedicalExamMapper {
@@ -22,13 +23,13 @@ export class MedicalExamMapper {
   }
 
   static toDomain(row: MedicalExamRow): MedicalExam {
+    if (!row.examDocument) {
+      throw new Error(`MedicalExam ${row.id} is missing examDocument aggregate`);
+    }
     return new MedicalExam({
       id: row.id,
       status: row.status as EMedicalExamStatus,
-      fileName: row.fileName,
-      mimeType: row.mimeType,
-      fileSize: row.fileSize,
-      storagePath: row.storagePath,
+      examDocument: ExamDocumentMapper.toDomain(row.examDocument),
       processingResult: row.processingResult,
       report: row.report,
       uploadedBy: MedicalExamMapper.userToDomain(row.uploadedBy),
@@ -44,10 +45,6 @@ export class MedicalExamMapper {
     return {
       id: exam.id,
       status: exam.status as PrismaMedicalExamStatus,
-      fileName: exam.fileName,
-      mimeType: exam.mimeType,
-      fileSize: exam.fileSize,
-      storagePath: exam.storagePath,
       processingResult: exam.processingResult,
       report: exam.report,
       uploadedById: exam.uploadedBy.id,

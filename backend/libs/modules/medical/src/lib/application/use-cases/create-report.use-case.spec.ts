@@ -33,9 +33,9 @@ const buildDoneExam = (): MedicalExam => {
     fileName: 'chest.dcm',
     mimeType: 'application/dicom',
     fileSize: 1024,
-    storagePath: 'path/to/chest.dcm',
     uploadedBy: uploader,
   });
+  exam.attachExamDocumentStorage('path/to/chest.dcm', 'https://example.com/chest.dcm');
   exam.markDone('AI processed');
   return exam;
 };
@@ -46,7 +46,6 @@ const buildPendingExam = (): MedicalExam => {
     fileName: 'chest.dcm',
     mimeType: 'application/dicom',
     fileSize: 1024,
-    storagePath: null,
     uploadedBy: uploader,
   });
 };

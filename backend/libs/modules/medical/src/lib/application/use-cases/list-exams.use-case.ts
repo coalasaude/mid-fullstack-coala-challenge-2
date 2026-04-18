@@ -3,7 +3,6 @@ import { EMedicalExamStatus } from '../../domain/enums/medical-exam-status.enum'
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
 import { ListExamsCommand } from '../commands/list-exams.command';
 import { ListExamItemResponseDto } from '../../presentation/http/dto/list-exam-item-response.dto';
-import { ExamUserDto } from '../../presentation/http/dto/exam-user.dto';
 
 @Injectable()
 export class ListExamsUseCase {
@@ -32,19 +31,11 @@ export class ListExamsUseCase {
         new ListExamItemResponseDto({
           id: exam.id,
           status: exam.status,
-          fileName: exam.fileName,
+          examDocument: exam.examDocument,
           report: exam.report,
           createdAt: exam.createdAt,
-          reportedBy: new ExamUserDto({
-            id: exam.reportedBy?.id,
-            email: exam.reportedBy?.email,
-            role: exam.reportedBy?.role,
-          }),
-          uploadedBy: new ExamUserDto({
-            id: exam.uploadedBy.id,
-            email: exam.uploadedBy.email,
-            role: exam.uploadedBy.role,
-          }),
+          reportedBy: exam.reportedBy,
+          uploadedBy: exam.uploadedBy,
         }),
     );
 

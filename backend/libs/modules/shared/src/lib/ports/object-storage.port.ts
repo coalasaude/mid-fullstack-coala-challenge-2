@@ -9,5 +9,5 @@ export type ObjectStoragePutParams = {
 export abstract class IObjectStorageProvider {
   abstract putObject(
     params: ObjectStoragePutParams,
-  ): Promise<Result<void, Error>>;
+  ): Promise<Result<{ url: string }, Error>>;
 }

@@ -23,9 +23,9 @@ const buildExam = (status: EMedicalExamStatus): MedicalExam => {
     fileName: 'exam.dcm',
     mimeType: 'application/dicom',
     fileSize: 512,
-    storagePath: 'path/to/exam.dcm',
     uploadedBy: uploader,
   });
+  exam.attachExamDocumentStorage('path/to/exam.dcm', 'https://example.com/exam.dcm');
   if (status === EMedicalExamStatus.PROCESSING) exam.toProcessing();
   if (status === EMedicalExamStatus.DONE) {
     exam.toProcessing();

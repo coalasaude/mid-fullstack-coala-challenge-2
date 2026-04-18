@@ -37,10 +37,6 @@ model User {
 model MedicalExam {
   id               String             @id @default(uuid())
   status           MedicalExamStatus  @default(PENDING)
-  fileName         String
-  mimeType         String
-  fileSize         Int
-  storagePath      String?
   processingResult String?
   report           String?
   uploadedById     String
@@ -48,8 +44,22 @@ model MedicalExam {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  uploadedBy User  @relation("MedicalExamUploadedBy", fields: [uploadedById], references: [id])
-  reportedBy User? @relation("MedicalExamReportedBy", fields: [reportedById], references: [id])
+  uploadedBy   User          @relation("MedicalExamUploadedBy", fields: [uploadedById], references: [id])
+  reportedBy   User?         @relation("MedicalExamReportedBy", fields: [reportedById], references: [id])
+  examDocument ExamDocument?
+}
+
+model ExamDocument {
+  id            String   @id @default(uuid())
+  medicalExamId String   @unique
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  url           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  medicalExam MedicalExam @relation(fields: [medicalExamId], references: [id], onDelete: Cascade)
 }
 
 model UserAccessLog {

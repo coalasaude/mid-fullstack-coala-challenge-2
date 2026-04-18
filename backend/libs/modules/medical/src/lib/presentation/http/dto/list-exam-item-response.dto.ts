@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EMedicalExamStatus } from '../../../domain/enums/medical-exam-status.enum';
 import { ExamUserDto } from './exam-user.dto';
+import { Option } from '@healthflow/shared';
+import { ExamDocumentDto } from './exam-document.dto';
 
 export class ListExamItemResponseDto {
   @ApiProperty({ example: 'b2c3d4e5-0000-0000-0000-000000000002' })
@@ -9,8 +11,8 @@ export class ListExamItemResponseDto {
   @ApiProperty({ enum: EMedicalExamStatus, example: EMedicalExamStatus.DONE })
   status!: EMedicalExamStatus;
 
-  @ApiProperty({ example: 'chest-xray.dcm' })
-  fileName!: string;
+  @ApiProperty({ type: ExamDocumentDto })
+  examDocument!: ExamDocumentDto;
 
   @ApiPropertyOptional({
     example: 'No abnormalities detected.',
@@ -22,7 +24,7 @@ export class ListExamItemResponseDto {
   createdAt!: Date;
 
   @ApiProperty({ type: ExamUserDto })
-  reportedBy!: ExamUserDto;
+  reportedBy!: Option<ExamUserDto>;
 
   @ApiProperty({ type: ExamUserDto })
   uploadedBy!: ExamUserDto;
@@ -30,7 +32,7 @@ export class ListExamItemResponseDto {
   constructor({
     id,
     status,
-    fileName,
+    examDocument,
     report,
     createdAt,
     reportedBy,
@@ -38,20 +40,36 @@ export class ListExamItemResponseDto {
   }: {
     id: string;
     status: EMedicalExamStatus;
-    fileName: string;
+    examDocument: ExamDocumentDto;
     report: string | null;
     createdAt: Date;
-    reportedBy: ExamUserDto;
+    reportedBy: Option<ExamUserDto>;
     uploadedBy: ExamUserDto;
   }) {
+    const examDocumentDto = new ExamDocumentDto({
+      fileName: examDocument.fileName,
+      mimeType: examDocument.mimeType,
+      fileSize: examDocument.fileSize,
+      url: examDocument.url,
+    });
+    const reportedByDto = new ExamUserDto({
+      id: reportedBy?.id,
+      email: reportedBy?.email,
+      role: reportedBy?.role,
+    });
+    const uploadedByDto = new ExamUserDto({
+      id: uploadedBy.id,
+      email: uploadedBy.email,
+      role: uploadedBy.role,
+    });
     Object.assign(this, {
       id,
       status,
-      fileName,
+      examDocument: examDocumentDto,
       report,
       createdAt,
-      reportedBy,
-      uploadedBy,
+      reportedBy: reportedByDto,
+      uploadedBy: uploadedByDto,
     });
   }
 }

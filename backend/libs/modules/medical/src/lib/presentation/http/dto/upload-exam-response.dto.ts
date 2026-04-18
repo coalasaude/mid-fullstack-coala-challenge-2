@@ -14,15 +14,24 @@ export class UploadExamResponseDto {
   @ApiPropertyOptional({ example: null, nullable: true })
   processingResult!: string | null;
 
+  @ApiPropertyOptional({
+    example: 'https://bucket.example.com/medical-exams/.../chest.dcm',
+    nullable: true,
+    description: 'Public URL of the uploaded file (after storage upload)',
+  })
+  url!: string | null;
+
   constructor({
     id,
     status,
     processingResult,
+    url,
   }: {
     id: string;
     status: EMedicalExamStatus;
     processingResult: string | null;
+    url: string | null;
   }) {
-    Object.assign(this, { id, status, processingResult });
+    Object.assign(this, { id, status, processingResult, url });
   }
 }

@@ -2,6 +2,7 @@ import { ERole } from '@healthflow/shared';
 import { EMedicalExamStatus } from '../enums/medical-exam-status.enum';
 import { User } from './user.entity';
 import { MedicalExam } from './medical-exam.entity';
+import { ExamDocument } from './exam-document.entity';
 
 const makeUploader = () =>
   User.fromPrimitives({
@@ -19,10 +20,11 @@ const makeDoctor = () =>
 
 const makeExam = () =>
   MedicalExam.create({
-    fileName: 'chest.dcm',
-    mimeType: 'application/dicom',
-    fileSize: 1024,
-    storagePath: null,
+    examDocument: ExamDocument.create({
+      fileName: 'chest.dcm',
+      mimeType: 'application/dicom',
+      fileSize: 1024,
+    }),
     uploadedBy: makeUploader(),
   });
 
@@ -50,34 +52,37 @@ describe('MedicalExam', () => {
       expect(exam.reportedBy).toBeNull();
     });
 
-    it('should store fileName, mimeType, fileSize and uploadedBy', () => {
+    it('should store fileName, mimeType, fileSize and uploadedBy on document', () => {
       const uploader = makeUploader();
       const exam = MedicalExam.create({
-        fileName: 'scan.pdf',
-        mimeType: 'application/pdf',
-        fileSize: 2048,
-        storagePath: null,
+        examDocument: ExamDocument.create({
+          fileName: 'chest.dcm',
+          mimeType: 'application/dicom',
+          fileSize: 1024,
+        }),
         uploadedBy: uploader,
       });
-      expect(exam.fileName).toBe('scan.pdf');
-      expect(exam.mimeType).toBe('application/pdf');
-      expect(exam.fileSize).toBe(2048);
       expect(exam.uploadedBy.id).toBe(uploader.id);
+      expect(exam.examDocument.fileName).toBe('chest.dcm');
+      expect(exam.examDocument.mimeType).toBe('application/dicom');
+      expect(exam.examDocument.fileSize).toBe(1024);
     });
   });
 
-  describe('setStoragePath', () => {
-    it('should update storagePath', () => {
+  describe('attachUrl', () => {
+    it('should update url on exam document', () => {
       const exam = makeExam();
-      exam.setStoragePath('medical-exams/123/chest.dcm');
-      expect(exam.storagePath).toBe('medical-exams/123/chest.dcm');
+      exam.examDocument.attachUrl('https://bucket/x');
+      expect(exam.examDocument.url).toBe('https://bucket/x');
     });
 
-    it('should update updatedAt', () => {
+    it('should update exam updatedAt', () => {
       const exam = makeExam();
       const before = new Date();
-      exam.setStoragePath('path/to/file');
-      expect(exam.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      exam.examDocument.attachUrl('https://example.com/f');
+      expect(exam.examDocument.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        before.getTime(),
+      );
     });
   });
 

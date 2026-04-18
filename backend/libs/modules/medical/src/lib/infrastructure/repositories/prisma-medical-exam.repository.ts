@@ -4,12 +4,17 @@ import { Option } from '@healthflow/shared';
 import { MedicalExam } from '../../domain/entities/medical-exam.entity';
 import { EMedicalExamStatus } from '../../domain/enums/medical-exam-status.enum';
 import { MedicalExamRepository } from '../../domain/repositories/medical-exam.repository';
+import { ExamDocumentMapper } from '../mappers/exam-document.mapper';
 import {
   MedicalExamMapper,
   MedicalExamRow,
 } from '../mappers/medical-exam.mapper';
 
-const examInclude = { uploadedBy: true, reportedBy: true } as const;
+const examInclude = {
+  uploadedBy: true,
+  reportedBy: true,
+  examDocument: true,
+} as const;
 
 @Injectable()
 export class PrismaMedicalExamRepository extends MedicalExamRepository {
@@ -25,7 +30,12 @@ export class PrismaMedicalExamRepository extends MedicalExamRepository {
 
     if (!existing) {
       const row = await this.prisma.medicalExam.create({
-        data,
+        data: {
+          ...data,
+          examDocument: {
+            create: ExamDocumentMapper.toCreateNested(exam.examDocument),
+          },
+        },
         include: examInclude,
       });
       return MedicalExamMapper.toDomain(row);
@@ -35,7 +45,12 @@ export class PrismaMedicalExamRepository extends MedicalExamRepository {
     void id;
     const row = await this.prisma.medicalExam.update({
       where: { id: exam.id },
-      data: updateData,
+      data: {
+        ...updateData,
+        examDocument: {
+          update: ExamDocumentMapper.toUpdateNested(exam.examDocument),
+        },
+      },
       include: examInclude,
     });
     return MedicalExamMapper.toDomain(row);

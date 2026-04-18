@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EMedicalExamStatus } from '../../../domain/enums/medical-exam-status.enum';
 import { ExamUserDto } from './exam-user.dto';
+import { ExamDocumentDto } from './exam-document.dto';
 
 export class CreateReportResponseDto {
   @ApiProperty({ example: 'b2c3d4e5-0000-0000-0000-000000000002' })
@@ -12,20 +13,8 @@ export class CreateReportResponseDto {
   })
   status!: EMedicalExamStatus;
 
-  @ApiProperty({ example: 'chest-xray.dcm' })
-  fileName!: string;
-
-  @ApiProperty({ example: 'application/dicom' })
-  mimeType!: string;
-
-  @ApiProperty({ example: 1048576 })
-  fileSize!: number;
-
-  @ApiPropertyOptional({
-    example: 'medical-exams/b2c3d4.../chest-xray.dcm',
-    nullable: true,
-  })
-  storagePath!: string | null;
+  @ApiProperty({ type: ExamDocumentDto })
+  examDocument!: ExamDocumentDto;
 
   @ApiPropertyOptional({
     example: 'Processing completed successfully (simulated).',
@@ -54,10 +43,7 @@ export class CreateReportResponseDto {
   constructor({
     id,
     status,
-    fileName,
-    mimeType,
-    fileSize,
-    storagePath,
+    examDocument,
     processingResult,
     report,
     createdAt,
@@ -67,10 +53,7 @@ export class CreateReportResponseDto {
   }: {
     id: string;
     status: EMedicalExamStatus;
-    fileName: string;
-    mimeType: string;
-    fileSize: number;
-    storagePath: string | null;
+    examDocument: ExamDocumentDto;
     processingResult: string | null;
     report: string | null;
     createdAt: Date;
@@ -78,19 +61,32 @@ export class CreateReportResponseDto {
     reportedBy: ExamUserDto;
     uploadedBy: ExamUserDto;
   }) {
+    const examDocumentDto = new ExamDocumentDto({
+      fileName: examDocument.fileName,
+      mimeType: examDocument.mimeType,
+      fileSize: examDocument.fileSize,
+      url: examDocument.url,
+    });
+    const reportedByDto = new ExamUserDto({
+      id: reportedBy.id,
+      email: reportedBy.email,
+      role: reportedBy.role,
+    });
+    const uploadedByDto = new ExamUserDto({
+      id: uploadedBy.id,
+      email: uploadedBy.email,
+      role: uploadedBy.role,
+    });
     Object.assign(this, {
       id,
       status,
-      fileName,
-      mimeType,
-      fileSize,
-      storagePath,
+      examDocument: examDocumentDto,
       processingResult,
       report,
       createdAt,
       updatedAt,
-      reportedBy,
-      uploadedBy,
+      reportedBy: reportedByDto,
+      uploadedBy: uploadedByDto,
     });
   }
 }

@@ -28,6 +28,7 @@ export interface IConfiguration {
     secretAccessKey: string;
     region: string;
     bucket: string;
+    bucketUrl: string;
   };
 }
 
@@ -59,5 +60,6 @@ export const configuration = (): IConfiguration => ({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
     region: process.env.AWS_REGION ?? '',
     bucket: process.env.AWS_BUCKET ?? '',
+    bucketUrl: process.env.AWS_BUCKET_URL ?? '',
   },
 });

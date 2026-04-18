@@ -2,15 +2,13 @@ import { Entity, err, ok, Option, Result } from '@healthflow/shared';
 import { randomUUID } from 'crypto';
 import { MedicalExamReportError } from '../errors';
 import { EMedicalExamStatus } from '../enums/medical-exam-status.enum';
+import { ExamDocument } from './exam-document.entity';
 import { User } from './user.entity';
 
 export interface MedicalExamProps {
   id: string;
   status: EMedicalExamStatus;
-  fileName: string;
-  mimeType: string;
-  fileSize: number;
-  storagePath: Option<string>;
+  examDocument: ExamDocument;
   processingResult: Option<string>;
   report: Option<string>;
   uploadedBy: User;
@@ -24,20 +22,24 @@ export class MedicalExam extends Entity<MedicalExamProps> {
     return this.props.status;
   }
 
+  get examDocument(): ExamDocument {
+    return this.props.examDocument;
+  }
+
   get fileName(): string {
-    return this.props.fileName;
+    return this.props.examDocument.fileName;
   }
 
   get mimeType(): string {
-    return this.props.mimeType;
+    return this.props.examDocument.mimeType;
   }
 
   get fileSize(): number {
-    return this.props.fileSize;
+    return this.props.examDocument.fileSize;
   }
 
-  get storagePath(): Option<string> {
-    return this.props.storagePath;
+  get fileUrl(): Option<string> {
+    return this.props.examDocument.url;
   }
 
   get processingResult(): Option<string> {
@@ -65,20 +67,14 @@ export class MedicalExam extends Entity<MedicalExamProps> {
   }
 
   static create(input: {
-    fileName: string;
-    mimeType: string;
-    fileSize: number;
-    storagePath: Option<string>;
+    examDocument: ExamDocument;
     uploadedBy: User;
   }): MedicalExam {
     const now = new Date();
     return new MedicalExam({
       id: randomUUID(),
       status: EMedicalExamStatus.PENDING,
-      fileName: input.fileName,
-      mimeType: input.mimeType,
-      fileSize: input.fileSize,
-      storagePath: input.storagePath,
+      examDocument: input.examDocument,
       processingResult: null,
       report: null,
       uploadedBy: input.uploadedBy,
@@ -86,11 +82,6 @@ export class MedicalExam extends Entity<MedicalExamProps> {
       createdAt: now,
       updatedAt: now,
     });
-  }
-
-  setStoragePath(storagePath: string): void {
-    this.props.storagePath = storagePath;
-    this.props.updatedAt = new Date();
   }
 
   toProcessing(): void {

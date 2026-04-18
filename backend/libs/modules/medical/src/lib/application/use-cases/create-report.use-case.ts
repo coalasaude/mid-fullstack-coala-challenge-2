@@ -37,24 +37,13 @@ export class CreateReportUseCase {
     const result = new CreateReportResponseDto({
       id: updatedExam.id,
       status: updatedExam.status,
-      fileName: updatedExam.fileName,
-      mimeType: updatedExam.mimeType,
-      fileSize: updatedExam.fileSize,
-      storagePath: updatedExam.storagePath,
+      examDocument: updatedExam.examDocument,
       processingResult: updatedExam.processingResult,
       report: updatedExam.report,
       createdAt: updatedExam.createdAt,
       updatedAt: updatedExam.updatedAt,
-      reportedBy: new ExamUserDto({
-        id: updatedExam.reportedBy?.id,
-        email: updatedExam.reportedBy?.email,
-        role: updatedExam.reportedBy?.role,
-      }),
-      uploadedBy: new ExamUserDto({
-        id: updatedExam.uploadedBy.id,
-        email: updatedExam.uploadedBy.email,
-        role: updatedExam.uploadedBy.role,
-      }),
+      reportedBy: updatedExam.reportedBy as ExamUserDto,
+      uploadedBy: updatedExam.uploadedBy,
     });
 
     await this.userAccessLogEvents.publish({

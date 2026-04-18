@@ -38,10 +38,12 @@ const makePersistedExam = (): MedicalExam => {
     fileName: 'chest.dcm',
     mimeType: 'application/dicom',
     fileSize: 1024,
-    storagePath: null,
     uploadedBy: uploader,
   });
-  exam.setStoragePath('medical-exams/exam-id/chest.dcm');
+  exam.attachExamDocumentStorage(
+    'medical-exams/exam-id/chest.dcm',
+    'https://bucket.example.com/medical-exams/exam-id/chest.dcm',
+  );
   return exam;
 };
 
@@ -66,7 +68,10 @@ describe('UploadExamUseCase', () => {
     } as unknown as jest.Mocked<ExamProcessingQueuePort>;
 
     objectStorage = {
-      putObject: jest.fn().mockResolvedValue({ ok: true, value: undefined }),
+      putObject: jest.fn().mockResolvedValue({
+        ok: true,
+        value: { url: 'https://bucket.example.com/medical-exams/test/chest.dcm' },
+      }),
     } as unknown as jest.Mocked<IObjectStorageProvider>;
 
     userAccessLogEvents = {
@@ -94,6 +99,7 @@ describe('UploadExamUseCase', () => {
     );
     expect(result.id).toBe(persistedExam.id);
     expect(result.status).toBe(EMedicalExamStatus.PENDING);
+    expect(result.url).toBe(persistedExam.fileUrl);
   });
 
   it('should publish user access log after upload', async () => {

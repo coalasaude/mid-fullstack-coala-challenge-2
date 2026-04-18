@@ -44,7 +44,7 @@ export class S3ObjectStorageProvider extends IObjectStorageProvider {
 
   override async putObject(
     params: ObjectStoragePutParams,
-  ): Promise<Result<void, Error>> {
+  ): Promise<Result<{ url: string }, Error>> {
     const bucket = this.configService.get<string>('aws.bucket')?.trim();
     if (!bucket) {
       return err(
@@ -60,10 +60,11 @@ export class S3ObjectStorageProvider extends IObjectStorageProvider {
           ContentType: params.contentType,
         }),
       );
+      const bucketUrl = this.configService.getOrThrow<string>('aws.bucketUrl');
+      return ok({ url: `${bucketUrl.trim()}/${params.key}` });
     } catch (error) {
       this.logger.error(`S3 putObject failed for key "${params.key}"`, error);
       return err(new Error(`S3 putObject failed for key "${params.key}"`));
     }
-    return ok(undefined);
   }
 }
