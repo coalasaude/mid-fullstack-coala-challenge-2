@@ -4,7 +4,7 @@ import {
   HealthCheckResult,
   HealthCheckService,
 } from '@nestjs/terminus';
-import { ApiHealthCheck, DatabaseHealthCheck } from '.';
+import { ApiHealthCheck, DatabaseHealthCheck, RabbitMqHealthCheck } from '.';
 
 @Controller('health')
 export class HealthController {
@@ -12,6 +12,7 @@ export class HealthController {
     private readonly health: HealthCheckService,
     private readonly apiHealthCheck: ApiHealthCheck,
     private readonly databaseHealthCheck: DatabaseHealthCheck,
+    private readonly rabbitMqHealthCheck: RabbitMqHealthCheck,
   ) {}
 
   @Get()
@@ -21,6 +22,7 @@ export class HealthController {
     return this.health.check([
       () => this.apiHealthCheck.checkHealth(),
       () => this.databaseHealthCheck.checkHealth(),
+      () => this.rabbitMqHealthCheck.checkHealth(),
     ]);
   }
 }

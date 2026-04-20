@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthCheckService } from '@nestjs/terminus';
-import { ApiHealthCheck, DatabaseHealthCheck } from '.';
+import { ApiHealthCheck, DatabaseHealthCheck, RabbitMqHealthCheck } from '.';
 import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
@@ -18,11 +18,13 @@ describe('HealthController', () => {
               info: {
                 api: { status: 'up' },
                 database: { status: 'up' },
+                rabbitmq: { status: 'up' },
               },
               error: {},
               details: {
                 api: { status: 'up' },
                 database: { status: 'up' },
+                rabbitmq: { status: 'up' },
               },
             }),
           },
@@ -39,6 +41,14 @@ describe('HealthController', () => {
             checkHealth: jest
               .fn()
               .mockResolvedValue({ database: { status: 'up' } }),
+          },
+        },
+        {
+          provide: RabbitMqHealthCheck,
+          useValue: {
+            checkHealth: jest
+              .fn()
+              .mockResolvedValue({ rabbitmq: { status: 'up' } }),
           },
         },
       ],

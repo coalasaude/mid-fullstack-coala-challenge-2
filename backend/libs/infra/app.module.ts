@@ -8,7 +8,11 @@ import { MedicalModule } from '@healthflow/medical';
 import { ObservabilityModule } from '@healthflow/observability';
 import { SharedModule } from '@healthflow/shared';
 import { ConfigurationModule } from './configuration';
-import { ApiHealthCheck, DatabaseHealthCheck } from './health-check';
+import {
+  ApiHealthCheck,
+  DatabaseHealthCheck,
+  RabbitMqHealthCheck,
+} from './health-check';
 import { HealthController } from './health-check/health.controller';
 import { PrismaModule } from './database';
 import { MessagingModule } from './messaging';
@@ -32,6 +36,7 @@ import { ProvidersModule } from '@healthflow/providers';
   providers: [
     ApiHealthCheck,
     DatabaseHealthCheck,
+    RabbitMqHealthCheck,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
