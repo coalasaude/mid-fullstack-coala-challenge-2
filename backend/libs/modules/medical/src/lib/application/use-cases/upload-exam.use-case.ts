@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { basename } from 'path';
+import { extname } from 'path';
 import { IObjectStorageProvider, isErr, ok, Result } from '@healthflow/shared';
 import {
   EUserAccessLogAction,
@@ -76,8 +76,15 @@ export class UploadExamUseCase {
     examDocument: ExamDocument,
     fileBuffer: Buffer,
   ): Promise<Result<{ url: string }, Error>> {
-    const safeName = basename(examDocument.fileName).replace(/[^\w.-]+/g, '_');
-    const objectKey = ['medical-exams', examDocument.id, safeName].join('/');
+    const extension = extname(examDocument.fileName)
+      .toLowerCase()
+      .replace(/[^.a-z0-9]/g, '')
+      .slice(0, 10);
+    const objectKey = [
+      'medical-exams',
+      examDocument.id,
+      `${examDocument.id}${extension}`,
+    ].join('/');
 
     const result = await this.objectStorage.putObject({
       key: objectKey,

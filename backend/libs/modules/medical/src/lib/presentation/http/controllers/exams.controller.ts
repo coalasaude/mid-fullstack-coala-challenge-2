@@ -54,7 +54,23 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ERole.ATTENDANT)
   @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }),
+    FileInterceptor('file', {
+      limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'application/pdf',
+          'application/dicom',
+          'image/png',
+          'image/jpeg',
+          'image/jpg',
+        ];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Unsupported file type'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
   )
   @ApiOperation({ summary: 'Upload a new medical exam file (ATTENDANT only)' })
   @ApiConsumes('multipart/form-data')

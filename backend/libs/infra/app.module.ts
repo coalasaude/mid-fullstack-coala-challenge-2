@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TerminusModule } from '@nestjs/terminus';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AnalyticsModule } from '@healthflow/analytics';
 import { AuthModule } from '@healthflow/auth';
 import { MedicalModule } from '@healthflow/medical';
@@ -15,6 +17,7 @@ import { ProvidersModule } from '@healthflow/providers';
 @Module({
   imports: [
     ConfigurationModule.register(),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 100 }]),
     PrismaModule,
     MessagingModule,
     TerminusModule,
@@ -26,6 +29,10 @@ import { ProvidersModule } from '@healthflow/providers';
     AnalyticsModule,
   ],
   controllers: [HealthController],
-  providers: [ApiHealthCheck, DatabaseHealthCheck],
+  providers: [
+    ApiHealthCheck,
+    DatabaseHealthCheck,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
