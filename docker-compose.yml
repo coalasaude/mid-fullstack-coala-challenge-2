@@ -1,0 +1,120 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: healthflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-healthflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-healthflow}
+      POSTGRES_DB: ${POSTGRES_DB:-healthflow}
+    volumes:
+      - healthflow_pg_data:/var/lib/postgresql/data
+    networks:
+      - healthflow
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-healthflow} -d ${POSTGRES_DB:-healthflow}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: healthflow-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - healthflow_rmq_data:/var/lib/rabbitmq
+    networks:
+      - healthflow
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: healthflow-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-healthflow}:${POSTGRES_PASSWORD:-healthflow}@postgres:5432/${POSTGRES_DB:-healthflow}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      EXAM_PROCESSING_QUEUE: ${EXAM_PROCESSING_QUEUE:-exam_processing_queue}
+      EXAM_PROCESSING_DLQ: ${EXAM_PROCESSING_DLQ:-exam_processing_dlq}
+      EXAM_PROCESSING_RETRY_QUEUE: ${EXAM_PROCESSING_RETRY_QUEUE:-exam-processing.retry}
+      USER_ACCESS_LOG_QUEUE: ${USER_ACCESS_LOG_QUEUE:-user-access.log.events}
+      USER_ACCESS_LOG_DLQ: ${USER_ACCESS_LOG_DLQ:-user-access.log.events.dlq}
+      USER_ACCESS_LOG_RETRY_QUEUE: ${USER_ACCESS_LOG_RETRY_QUEUE:-user-access.log.retry}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_BUCKET: ${AWS_BUCKET}
+      AWS_BUCKET_URL: ${AWS_BUCKET_URL}
+    networks:
+      - healthflow
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O- http://127.0.0.1:3000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+    container_name: healthflow-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+    networks:
+      - healthflow
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: healthflow-nginx
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - '${NGINX_HTTP_PORT:-80}:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - healthflow_nginx_logs:/var/log/nginx
+    networks:
+      - healthflow
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O-', 'http://127.0.0.1/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  healthflow_pg_data:
+  healthflow_rmq_data:
+  healthflow_nginx_logs:
+
+networks:
+  healthflow:
+    driver: bridge

@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.nx
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Environment (keep .env.example committed)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Tests & coverage
+coverage/
+.nyc_output/
+
+# Cache & tooling
+.cache/
+.eslintcache
+.parcel-cache/
+.nx/cache
+
+# IDE
+.idea/
+*.swp
+*.swo
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+tmp/
+temp/

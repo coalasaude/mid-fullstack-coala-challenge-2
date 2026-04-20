@@ -1,0 +1,9 @@
+{
+  "name": "medical",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/modules/medical/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project medical --web",
+  "targets": {}
+}
