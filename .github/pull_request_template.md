@@ -28,7 +28,7 @@ Os dois bônus estão entregues: interceptor global de logs de request e DLQ no 
 
 ## URL de Deploy
 
-http://3.148.194.174
+http://3.138.37.212
 
 (EC2 na AWS, subiu com `docker compose up -d --build` a partir do `.env.production.example`.)
 
