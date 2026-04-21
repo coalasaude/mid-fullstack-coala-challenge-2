@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: healthflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-healthflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-healthflow}
+      POSTGRES_DB: ${POSTGRES_DB:-healthflow}
+    expose:
+      - "5432"
+    ports:
+      - "${POSTGRES_HOST_PORT:-5436}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-healthflow} -d ${POSTGRES_DB:-healthflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - healthflow
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: healthflow-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-healthflow}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-healthflow}
+    expose:
+      - "5672"
+    ports:
+      - "${RABBITMQ_HOST_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_HOST_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - healthflow
+
+  backend:
+    build:
+      context: ./backend
+    container_name: healthflow-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-healthflow}:${POSTGRES_PASSWORD:-healthflow}@postgres:5432/${POSTGRES_DB:-healthflow}?schema=public
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-healthflow}:${RABBITMQ_PASSWORD:-healthflow}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      PORT: 3001
+      CORS_ORIGIN: http://${PUBLIC_HOST:-localhost}:${FRONTEND_HOST_PORT:-3030}
+    ports:
+      - "${BACKEND_HOST_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - healthflow
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://${PUBLIC_HOST:-localhost}:${BACKEND_HOST_PORT:-3001}
+    container_name: healthflow-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_HOST_PORT:-3030}:3000"
+    depends_on:
+      - backend
+    networks:
+      - healthflow
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  healthflow:
+    driver: bridge
