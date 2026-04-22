@@ -11,6 +11,7 @@ import * as amqp from 'amqplib';
 export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   private connection: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
+  private initPromise: Promise<void> | null = null;
   private queueName: string;
 
   constructor(private readonly configService: ConfigService) {
@@ -20,6 +21,16 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    if (this.initPromise) {
+      await this.initPromise;
+      return;
+    }
+
+    this.initPromise = this.connect();
+    await this.initPromise;
+  }
+
+  private async connect() {
     const rabbitmqUrl =
       this.configService.get<string>('RABBITMQ_URL') ||
       'amqp://localhost:5672';
@@ -45,6 +56,8 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   }
 
   async publishExamProcessing(examId: string) {
+    await this.onModuleInit();
+
     if (!this.channel) {
       throw new InternalServerErrorException('RabbitMQ channel not initialized');
     }
@@ -65,6 +78,8 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   async consumeExamProcessing(
     handler: (examId: string) => Promise<void>,
   ): Promise<void> {
+    await this.onModuleInit();
+
     if (!this.channel) {
       throw new InternalServerErrorException('RabbitMQ channel not initialized');
     }
