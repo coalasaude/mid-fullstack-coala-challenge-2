@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { QueueModule } from './queue/queue.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { MedicalExamsModule } from './medical-exams/medical-exams.module';
@@ -13,6 +14,7 @@ import { MedicalExamsModule } from './medical-exams/medical-exams.module';
       isGlobal: true,
     }),
     PrismaModule,
+    QueueModule,
     UsersModule,
     AuthModule,
     MedicalExamsModule,
