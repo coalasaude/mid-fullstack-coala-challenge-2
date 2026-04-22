@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 
@@ -55,5 +60,35 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
         'Failed to publish exam processing message',
       );
     }
+  }
+
+  async consumeExamProcessing(
+    handler: (examId: string) => Promise<void>,
+  ): Promise<void> {
+    if (!this.channel) {
+      throw new InternalServerErrorException('RabbitMQ channel not initialized');
+    }
+
+    await this.channel.consume(this.queueName, async (msg) => {
+      if (!msg) {
+        return;
+      }
+
+      try {
+        const { examId } = JSON.parse(msg.content.toString()) as {
+          examId?: string;
+        };
+
+        if (!examId) {
+          this.channel?.ack(msg);
+          return;
+        }
+
+        await handler(examId);
+        this.channel?.ack(msg);
+      } catch {
+        this.channel?.ack(msg);
+      }
+    });
   }
 }
