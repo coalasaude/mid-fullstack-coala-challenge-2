@@ -12,3 +12,13 @@ export async function uploadExam(fileReference: string): Promise<MedicalExam> {
   });
   return data;
 }
+
+export async function submitExamReport(
+  examId: string,
+  report: string,
+): Promise<MedicalExam> {
+  const { data } = await api.post<MedicalExam>(`/exams/${examId}/report`, {
+    report,
+  });
+  return data;
+}
