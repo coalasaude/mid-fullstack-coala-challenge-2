@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MedicalExamStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMedicalExamDto } from './dto/create-medical-exam.dto';
 import { RabbitMqService } from '../queue/rabbitmq.service';
 import { JwtPayload } from '../auth/types/jwt-payload.type';
+import { ReportMedicalExamDto } from './dto/report-medical-exam.dto';
 
 @Injectable()
 export class MedicalExamsService {
@@ -36,6 +37,28 @@ export class MedicalExamsService {
     return this.prisma.medicalExam.findMany({
       where: { status: MedicalExamStatus.DONE },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async submitReport(examId: string, reportMedicalExamDto: ReportMedicalExamDto) {
+    const exam = await this.prisma.medicalExam.findUnique({
+      where: { id: examId },
+    });
+
+    if (!exam) {
+      throw new NotFoundException('Medical exam not found');
+    }
+
+    if (exam.status !== MedicalExamStatus.DONE) {
+      throw new BadRequestException('Medical exam must be DONE to receive report');
+    }
+
+    return this.prisma.medicalExam.update({
+      where: { id: examId },
+      data: {
+        report: reportMedicalExamDto.report,
+        status: MedicalExamStatus.REPORTED,
+      },
     });
   }
 }
