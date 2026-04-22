@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   UseGuards,
@@ -17,6 +18,12 @@ import { MedicalExamsService } from './medical-exams.service';
 @Controller('exams')
 export class MedicalExamsController {
   constructor(private readonly medicalExamsService: MedicalExamsService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  list(@Req() req: Request & { user: JwtPayload }) {
+    return this.medicalExamsService.listByUserRole(req.user);
+  }
 
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
