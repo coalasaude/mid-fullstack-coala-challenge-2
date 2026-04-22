@@ -1,8 +1,5 @@
-import axios from 'axios';
 import type { JwtPayload, LoginRequest, LoginResponse } from '@/types/auth';
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://localhost:3001';
+import { api, setAuthHeader } from '@/services/api';
 
 function decodeJwtPayload(token: string): JwtPayload {
   const parts = token.split('.');
@@ -25,17 +22,13 @@ function decodeJwtPayload(token: string): JwtPayload {
 }
 
 export async function login(credentials: LoginRequest): Promise<JwtPayload> {
-  const { data } = await axios.post<LoginResponse>(
-    `${API_BASE_URL}/auth/login`,
-    credentials,
-  );
+  const { data } = await api.post<LoginResponse>('/auth/login', credentials);
 
   const payload = decodeJwtPayload(data.accessToken);
 
-  console.log(payload);
-
   localStorage.setItem('healthflow_access_token', data.accessToken);
   localStorage.setItem('healthflow_user_role', payload.role);
+  setAuthHeader(data.accessToken);
 
   return payload;
 }
