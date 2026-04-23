@@ -38,13 +38,23 @@ function colorForStatus(
 }
 
 export function ExamStatusChip({ status }: { status: MedicalExamStatus }) {
+  const color = colorForStatus(status);
+
   return (
     <Chip
       label={labelForStatus(status)}
-      color={colorForStatus(status)}
+      color={color}
       size="small"
-      variant="outlined"
-      sx={{ fontWeight: 800 }}
+      sx={{
+        fontWeight: 800,
+        borderRadius: 999,
+        ...(color === 'default'
+          ? {
+              bgcolor: 'rgba(111, 70, 190, 0.12)',
+              color: 'primary.main',
+            }
+          : {}),
+      }}
     />
   );
 }

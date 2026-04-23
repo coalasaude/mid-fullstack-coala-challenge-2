@@ -8,8 +8,10 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
+import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -22,7 +24,6 @@ import {
 } from '@/services/api';
 import { listExams, submitExamReport } from '@/services/exams';
 import type { MedicalExam } from '@/types/exam';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { ExamStatusChip } from '@/components/exams/ExamStatusChip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { getHttpErrorMessage } from '@/utils/http-error';
@@ -48,6 +49,7 @@ export default function DoctorDashboardPage() {
   >({});
 
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+  const [reportedTodayCount, setReportedTodayCount] = useState(0);
 
   const refreshExams = useCallback(async () => {
     const token = getAccessToken();
@@ -123,6 +125,7 @@ export default function DoctorDashboardPage() {
       await submitExamReport(examId, report);
       setReportsByExamId((prev) => ({ ...prev, [examId]: '' }));
       setGlobalSuccess('Laudo enviado com sucesso.');
+      setReportedTodayCount((prev) => prev + 1);
       await refreshExams();
     } catch (error) {
       setSubmitErrorByExamId((prev) => ({
@@ -134,6 +137,9 @@ export default function DoctorDashboardPage() {
     }
   }
 
+  const availableCount = exams.length;
+  const donePendingCount = exams.filter((exam) => exam.status === 'DONE').length;
+
   if (!bootstrapped) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
@@ -143,17 +149,84 @@ export default function DoctorDashboardPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: { xs: 3, sm: 4 } }}>
-      <Container maxWidth="lg">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: { xs: 2.5, sm: 4 } }}>
+      <Container maxWidth="xl">
         <Stack spacing={3} sx={{ display: 'flex' }}>
-          <PageHeader
-            title="Painel do médico"
-            subtitle={`Aqui aparecem apenas exames prontos para laudo. A fila atualiza automaticamente a cada ${
-              POLL_INTERVAL_MS / 1000
-            }s.`}
-          />
+          <Paper
+            sx={{
+              p: { xs: 2.5, sm: 3.5 },
+              background:
+                'linear-gradient(120deg, rgba(111, 70, 190, 0.14), rgba(111, 70, 190, 0.04))',
+            }}
+          >
+            <Stack
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                alignItems: { xs: 'flex-start', md: 'center' },
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                  Dashboard médico
+                </Typography>
+                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                  Gestão da fila de exames prontos para laudo com foco em produtividade.
+                </Typography>
+              </Box>
+              <Chip
+                label={`Atualização automática: ${POLL_INTERVAL_MS / 1000}s`}
+                sx={{
+                  bgcolor: 'rgba(111, 70, 190, 0.12)',
+                  color: 'primary.main',
+                  fontWeight: 700,
+                }}
+              />
+            </Stack>
+          </Paper>
 
-          <Paper sx={{ p: { xs: 2.5, sm: 3 }, position: 'relative', overflow: 'hidden' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+              gap: 2,
+            }}
+          >
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Exames disponíveis
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 800 }}>
+                  {availableCount}
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Laudados hoje (sessão)
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 800 }}>
+                  {reportedTodayCount}
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  DONE pendentes
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 800 }}>
+                  {donePendingCount}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+
+          <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, position: 'relative', overflow: 'hidden' }}>
             {listRefreshing ? (
               <LinearProgress
                 sx={{
@@ -172,47 +245,69 @@ export default function DoctorDashboardPage() {
                 gap: 2,
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 justifyContent: 'space-between',
-                mb: 2,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                Fila de laudos
-              </Typography>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Fila de laudos
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Exames com status `DONE` aguardando avaliação médica.
+                </Typography>
+              </Box>
+
               {listLoading ? (
-                <Stack sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+                <Stack
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: 1,
+                    alignItems: 'center',
+                  }}
+                >
                   <CircularProgress size={18} />
                   <Typography variant="body2" color="text.secondary">
-                    Carregando…
+                    Carregando...
                   </Typography>
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  {exams.length} exame(s)
+                  {exams.length} exame(s) disponível(is)
                 </Typography>
               )}
             </Stack>
 
-            {globalSuccess ? <Alert severity="success">{globalSuccess}</Alert> : null}
+            {globalSuccess ? <Alert severity="success" sx={{ mt: 2 }}>{globalSuccess}</Alert> : null}
             {listError ? (
-              <Alert severity="error" sx={{ mt: globalSuccess ? 2 : 0 }}>
+              <Alert severity="error" sx={{ mt: globalSuccess ? 2 : 2 }}>
                 {listError}
               </Alert>
             ) : null}
 
             {!listLoading && exams.length === 0 ? (
-              <Box sx={{ mt: listError || globalSuccess ? 2 : 0 }}>
+              <Box sx={{ mt: listError || globalSuccess ? 2 : 2 }}>
                 <EmptyState
-                  title="Nada na fila"
-                  description="Quando houver exames com processamento concluído, eles aparecerão aqui automaticamente."
+                  title="Nenhum exame para laudar"
+                  description="Quando o processamento finalizar com sucesso, os exames aparecerão aqui."
                 />
               </Box>
             ) : null}
 
-            <Stack spacing={2} sx={{ mt: 2, display: 'flex' }}>
+            <Stack spacing={2} sx={{ mt: 2.5, display: 'flex' }}>
               {exams.map((exam) => (
-                <Card key={exam.id} variant="outlined">
-                  <CardContent>
-                    <Stack spacing={1.5} sx={{ display: 'flex' }}>
+                <Card
+                  key={exam.id}
+                  variant="outlined"
+                  sx={{
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 14px 24px rgba(46, 30, 76, 0.08)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                    <Stack spacing={2}>
                       <Stack
                         sx={{
                           display: 'flex',
@@ -228,9 +323,11 @@ export default function DoctorDashboardPage() {
                         <ExamStatusChip status={exam.status} />
                       </Stack>
 
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        Resultado: {exam.processingResult ?? '—'}
+                      <Typography variant="body2" color="text.secondary">
+                        Resultado do processamento: {exam.processingResult ?? '—'}
                       </Typography>
+
+                      <Divider />
 
                       {submitErrorByExamId[exam.id] ? (
                         <Alert severity="error">{submitErrorByExamId[exam.id]}</Alert>
@@ -253,7 +350,7 @@ export default function DoctorDashboardPage() {
                           fullWidth
                           multiline
                           minRows={4}
-                          placeholder="Escreva o laudo aqui…"
+                          placeholder="Escreva o laudo clínico aqui..."
                         />
 
                         <CardActions sx={{ px: 0, pt: 2, justifyContent: 'flex-end' }}>
@@ -261,7 +358,7 @@ export default function DoctorDashboardPage() {
                             type="submit"
                             variant="contained"
                             disabled={submittingExamId === exam.id}
-                            sx={{ minWidth: 170 }}
+                            sx={{ minWidth: 170, px: 2.25 }}
                           >
                             {submittingExamId === exam.id ? (
                               <CircularProgress size={22} color="inherit" />
