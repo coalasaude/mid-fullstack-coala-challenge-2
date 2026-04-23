@@ -61,13 +61,12 @@ export class ExamProcessingConsumer implements OnModuleInit {
       const message =
         error instanceof Error ? error.message : 'Unexpected processing error';
 
-      await this.prisma.medicalExam.update({
-        where: { id: examId },
-        data: {
-          status: MedicalExamStatus.ERROR,
-          processingResult: `Processing failed: ${message}`,
-        },
-      });
+      this.logger.error(
+        `Unexpected error while processing exam ${examId}: ${message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw error;
     }
   }
 

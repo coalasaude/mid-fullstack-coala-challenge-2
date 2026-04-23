@@ -13,11 +13,19 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   private channel: amqp.Channel | null = null;
   private initPromise: Promise<void> | null = null;
   private queueName: string;
+  private dlqName: string;
+  private dlxName: string;
 
   constructor(private readonly configService: ConfigService) {
     this.queueName =
       this.configService.get<string>('RABBITMQ_EXAM_QUEUE') ||
       'exam_processing_queue';
+    this.dlqName =
+      this.configService.get<string>('RABBITMQ_EXAM_DLQ') ||
+      'exam_processing_dlq';
+    this.dlxName =
+      this.configService.get<string>('RABBITMQ_EXAM_DLX') ||
+      'exam_processing_dlx';
   }
 
   async onModuleInit() {
@@ -37,7 +45,17 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
 
     const connection = await amqp.connect(rabbitmqUrl);
     const channel = await connection.createChannel();
-    await channel.assertQueue(this.queueName, { durable: true });
+
+    await channel.assertExchange(this.dlxName, 'fanout', { durable: true });
+    await channel.assertQueue(this.dlqName, { durable: true });
+    await channel.bindQueue(this.dlqName, this.dlxName, '');
+
+    await channel.assertQueue(this.queueName, {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': this.dlxName,
+      },
+    });
 
     this.connection = connection;
     this.channel = channel;
@@ -102,7 +120,7 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
         await handler(examId);
         this.channel?.ack(msg);
       } catch {
-        this.channel?.ack(msg);
+        this.channel?.nack(msg, false, false);
       }
     });
   }
