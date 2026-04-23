@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -8,9 +8,9 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
+import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -22,15 +22,21 @@ import {
 } from '@/services/api';
 import { listExams, submitExamReport } from '@/services/exams';
 import type { MedicalExam } from '@/types/exam';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ExamStatusChip } from '@/components/exams/ExamStatusChip';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { getHttpErrorMessage } from '@/utils/http-error';
 
 const POLL_INTERVAL_MS = 4000;
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
+  const firstListLoadRef = useRef(true);
 
   const [bootstrapped, setBootstrapped] = useState(false);
   const [exams, setExams] = useState<MedicalExam[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [listRefreshing, setListRefreshing] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
   const [reportsByExamId, setReportsByExamId] = useState<Record<string, string>>(
@@ -51,14 +57,25 @@ export default function DoctorDashboardPage() {
 
     setAuthHeader(token);
 
+    const isFirstLoad = firstListLoadRef.current;
+    if (isFirstLoad) {
+      setListLoading(true);
+    } else {
+      setListRefreshing(true);
+    }
+
     try {
       const data = await listExams();
       setExams(data);
       setListError(null);
-    } catch {
-      setListError('Não foi possível carregar os exames.');
+    } catch (error) {
+      setListError(
+        getHttpErrorMessage(error, 'Não foi possível carregar os exames. Tente novamente.'),
+      );
     } finally {
       setListLoading(false);
+      setListRefreshing(false);
+      firstListLoadRef.current = false;
     }
   }, []);
 
@@ -107,10 +124,10 @@ export default function DoctorDashboardPage() {
       setReportsByExamId((prev) => ({ ...prev, [examId]: '' }));
       setGlobalSuccess('Laudo enviado com sucesso.');
       await refreshExams();
-    } catch {
+    } catch (error) {
       setSubmitErrorByExamId((prev) => ({
         ...prev,
-        [examId]: 'Não foi possível enviar o laudo.',
+        [examId]: getHttpErrorMessage(error, 'Não foi possível enviar o laudo. Tente novamente.'),
       }));
     } finally {
       setSubmittingExamId(null);
@@ -126,20 +143,28 @@ export default function DoctorDashboardPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fb', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: { xs: 3, sm: 4 } }}>
       <Container maxWidth="lg">
         <Stack spacing={3} sx={{ display: 'flex' }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
-              Painel do médico
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Exames prontos para laudo (atualização automática a cada{' '}
-              {POLL_INTERVAL_MS / 1000}s).
-            </Typography>
-          </Box>
+          <PageHeader
+            title="Painel do médico"
+            subtitle={`Aqui aparecem apenas exames prontos para laudo. A fila atualiza automaticamente a cada ${
+              POLL_INTERVAL_MS / 1000
+            }s.`}
+          />
 
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: { xs: 2.5, sm: 3 }, position: 'relative', overflow: 'hidden' }}>
+            {listRefreshing ? (
+              <LinearProgress
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                }}
+              />
+            ) : null}
+
             <Stack
               sx={{
                 display: 'flex',
@@ -150,7 +175,7 @@ export default function DoctorDashboardPage() {
                 mb: 2,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 Fila de laudos
               </Typography>
               {listLoading ? (
@@ -175,9 +200,12 @@ export default function DoctorDashboardPage() {
             ) : null}
 
             {!listLoading && exams.length === 0 ? (
-              <Alert severity="info" sx={{ mt: listError || globalSuccess ? 2 : 0 }}>
-                Nenhum exame disponível para laudo no momento.
-              </Alert>
+              <Box sx={{ mt: listError || globalSuccess ? 2 : 0 }}>
+                <EmptyState
+                  title="Nada na fila"
+                  description="Quando houver exames com processamento concluído, eles aparecerão aqui automaticamente."
+                />
+              </Box>
             ) : null}
 
             <Stack spacing={2} sx={{ mt: 2, display: 'flex' }}>
@@ -197,7 +225,7 @@ export default function DoctorDashboardPage() {
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                           {exam.fileReference}
                         </Typography>
-                        <Chip label={exam.status} color="success" size="small" />
+                        <ExamStatusChip status={exam.status} />
                       </Stack>
 
                       <Typography variant="body2" color="text.secondary" noWrap>
@@ -233,6 +261,7 @@ export default function DoctorDashboardPage() {
                             type="submit"
                             variant="contained"
                             disabled={submittingExamId === exam.id}
+                            sx={{ minWidth: 170 }}
                           >
                             {submittingExamId === exam.id ? (
                               <CircularProgress size={22} color="inherit" />

@@ -1,13 +1,13 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
+import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -17,41 +17,28 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ExamStatusChip } from '@/components/exams/ExamStatusChip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   clearAuthHeader,
   getAccessToken,
   setAuthHeader,
 } from '@/services/api';
 import { listExams, uploadExam } from '@/services/exams';
-import type { MedicalExam, MedicalExamStatus } from '@/types/exam';
+import type { MedicalExam } from '@/types/exam';
+import { getHttpErrorMessage } from '@/utils/http-error';
 
 const POLL_INTERVAL_MS = 4000;
 
-function statusColor(
-  status: MedicalExamStatus,
-): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' {
-  switch (status) {
-    case 'PENDING':
-      return 'warning';
-    case 'PROCESSING':
-      return 'info';
-    case 'DONE':
-      return 'success';
-    case 'ERROR':
-      return 'error';
-    case 'REPORTED':
-      return 'secondary';
-    default:
-      return 'default';
-  }
-}
-
 export default function AttendantDashboardPage() {
   const router = useRouter();
+  const firstListLoadRef = useRef(true);
 
   const [bootstrapped, setBootstrapped] = useState(false);
   const [exams, setExams] = useState<MedicalExam[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [listRefreshing, setListRefreshing] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
   const [fileReference, setFileReference] = useState('');
@@ -67,14 +54,25 @@ export default function AttendantDashboardPage() {
 
     setAuthHeader(token);
 
+    const isFirstLoad = firstListLoadRef.current;
+    if (isFirstLoad) {
+      setListLoading(true);
+    } else {
+      setListRefreshing(true);
+    }
+
     try {
       const data = await listExams();
       setExams(data);
       setListError(null);
-    } catch {
-      setListError('Não foi possível carregar os exames.');
+    } catch (error) {
+      setListError(
+        getHttpErrorMessage(error, 'Não foi possível carregar os exames. Tente novamente.'),
+      );
     } finally {
       setListLoading(false);
+      setListRefreshing(false);
+      firstListLoadRef.current = false;
     }
   }, []);
 
@@ -113,8 +111,10 @@ export default function AttendantDashboardPage() {
       setFileReference('');
       setUploadSuccess('Exame criado com sucesso.');
       await refreshExams();
-    } catch {
-      setUploadError('Não foi possível criar o exame.');
+    } catch (error) {
+      setUploadError(
+        getHttpErrorMessage(error, 'Não foi possível criar o exame. Tente novamente.'),
+      );
     } finally {
       setUploadLoading(false);
     }
@@ -129,21 +129,18 @@ export default function AttendantDashboardPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fb', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: { xs: 3, sm: 4 } }}>
       <Container maxWidth="lg">
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
-              Painel do atendente
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Crie novos exames e acompanhe o status (atualização automática a cada{' '}
-              {POLL_INTERVAL_MS / 1000}s).
-            </Typography>
-          </Box>
+          <PageHeader
+            title="Painel do atendente"
+            subtitle={`Crie novos exames e acompanhe o processamento. A lista atualiza automaticamente a cada ${
+              POLL_INTERVAL_MS / 1000
+            }s.`}
+          />
 
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+          <Paper sx={{ p: { xs: 2.5, sm: 3 } }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
               Novo exame
             </Typography>
 
@@ -162,6 +159,7 @@ export default function AttendantDashboardPage() {
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
+                alignItems: { sm: 'flex-start' },
               }}
             >
               <TextField
@@ -176,14 +174,25 @@ export default function AttendantDashboardPage() {
                 type="submit"
                 variant="contained"
                 disabled={uploadLoading}
-                sx={{ minWidth: { sm: 180 }, height: 56 }}
+                sx={{ minWidth: { sm: 200 }, height: 56, alignSelf: { sm: 'flex-start' } }}
               >
                 {uploadLoading ? <CircularProgress size={22} color="inherit" /> : 'Criar exame'}
               </Button>
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: { xs: 2.5, sm: 3 }, position: 'relative', overflow: 'hidden' }}>
+            {listRefreshing ? (
+              <LinearProgress
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                }}
+              />
+            ) : null}
+
             <Box
               sx={{
                 mb: 2,
@@ -194,7 +203,7 @@ export default function AttendantDashboardPage() {
                 justifyContent: 'space-between',
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 Exames
               </Typography>
               {listLoading ? (
@@ -214,13 +223,23 @@ export default function AttendantDashboardPage() {
             {listError ? <Alert severity="error">{listError}</Alert> : null}
 
             {!listLoading && exams.length === 0 ? (
-              <Alert severity="info" sx={{ mt: listError ? 2 : 0 }}>
-                Nenhum exame ainda. Crie o primeiro acima.
-              </Alert>
+              <Box sx={{ mt: listError ? 2 : 0 }}>
+                <EmptyState
+                  title="Nenhum exame ainda"
+                  description="Crie um exame acima para iniciar o fluxo. Quando o processamento terminar, o status mudará automaticamente aqui."
+                />
+              </Box>
             ) : null}
 
             {exams.length > 0 ? (
-              <TableContainer sx={{ mt: 2 }}>
+              <TableContainer
+                sx={{
+                  mt: 2,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -237,7 +256,7 @@ export default function AttendantDashboardPage() {
                           {exam.fileReference}
                         </TableCell>
                         <TableCell>
-                          <Chip label={exam.status} color={statusColor(exam.status)} size="small" />
+                          <ExamStatusChip status={exam.status} />
                         </TableCell>
                         <TableCell sx={{ maxWidth: 520 }}>
                           <Typography variant="body2" color="text.secondary" noWrap>

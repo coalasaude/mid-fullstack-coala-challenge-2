@@ -6,11 +6,15 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Container from '@mui/material/Container';
+import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { login } from '@/services/auth';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { getHttpErrorMessage } from '@/utils/http-error';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,69 +37,65 @@ export default function LoginPage() {
       }
 
       router.push('/dashboard/doctor');
-    } catch {
-      setError('Email ou senha inválidos.');
+    } catch (err) {
+      setError(getHttpErrorMessage(err, 'Não foi possível autenticar. Verifique email e senha.'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f7fb',
-        p: 2,
-      }}
-    >
-      <Paper elevation={3} sx={{ width: '100%', maxWidth: 420, p: 4, borderRadius: 3 }}>
-        <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              HealthFlow
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Faça login para continuar.
-            </Typography>
-          </Box>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="sm" sx={{ minHeight: '100vh', py: { xs: 6, sm: 10 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, sm: 4 },
+          }}
+        >
+          <Stack component="form" spacing={3} onSubmit={handleSubmit}>
+            <PageHeader
+              title="Entrar"
+              subtitle="Acesse com suas credenciais. Você será redirecionado automaticamente para o painel correto."
+            />
 
-          {error ? <Alert severity="error">{error}</Alert> : null}
+            <Divider />
 
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            fullWidth
-            autoComplete="email"
-          />
+            {error ? <Alert severity="error">{error}</Alert> : null}
 
-          <TextField
-            label="Senha"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            fullWidth
-            autoComplete="current-password"
-          />
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              fullWidth
+              autoComplete="email"
+            />
 
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading}
-            fullWidth
-            sx={{ py: 1.25 }}
-          >
-            {loading ? <CircularProgress color="inherit" size={22} /> : 'Entrar'}
-          </Button>
-        </Stack>
-      </Paper>
+            <TextField
+              label="Senha"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              fullWidth
+              autoComplete="current-password"
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={loading}
+              fullWidth
+              sx={{ py: 1.25 }}
+            >
+              {loading ? <CircularProgress color="inherit" size={22} /> : 'Entrar'}
+            </Button>
+          </Stack>
+        </Paper>
+      </Container>
     </Box>
   );
 }
