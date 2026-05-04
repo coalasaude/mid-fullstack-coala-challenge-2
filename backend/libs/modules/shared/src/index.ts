@@ -1,0 +1,16 @@
+export * from './lib/shared.module';
+export * from './lib/domain/entity';
+export * from './lib/domain/value-object';
+export * from './lib/enums/role.enum';
+export * from './lib/constants/roles-metadata.constant';
+export * from './lib/decorators/current-user.decorator';
+export * from './lib/decorators/roles.decorator';
+export * from './lib/guards/jwt-auth.guard';
+export * from './lib/guards/roles.guard';
+export type { IMemoryUploadedFile } from './lib/types/memory-uploaded-file.interface';
+export type { Option } from './lib/types/option';
+export type { Either, Result } from './lib/types/result';
+export { err, isErr, isOk, ok } from './lib/types/result';
+export * from './lib/ports/password-hasher.port';
+export * from './lib/ports/object-storage.port';
+export * from './lib/strategies/jwt.strategy';

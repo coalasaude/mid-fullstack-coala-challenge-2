@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@healthflow/analytics": ["libs/modules/analytics/src"],
+      "@healthflow/auth": ["libs/modules/auth/src"],
+      "@healthflow/infra": ["libs/infra"],
+      "@healthflow/medical": ["libs/modules/medical/src"],
+      "@healthflow/observability": ["libs/modules/observability/src"],
+      "@healthflow/providers": ["libs/providers/src"],
+      "@healthflow/shared": ["libs/modules/shared/src"],
+      "@prisma/client": ["node_modules/.prisma/client"]
+    }
+  },
+  "watchOptions": {
+    "watchFile": "dynamicPriorityPolling",
+    "watchDirectory": "dynamicPriorityPolling",
+    "excludeDirectories": ["node_modules", "dist"]
+  }
+}

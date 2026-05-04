@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ATTENDANT
+  DOCTOR
+}
+
+enum MedicalExamStatus {
+  PENDING
+  PROCESSING
+  DONE
+  ERROR
+  REPORTED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  role         Role
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastAccessAt DateTime?
+
+  uploadedMedicalExams MedicalExam[]    @relation("MedicalExamUploadedBy")
+  reportedMedicalExams MedicalExam[]    @relation("MedicalExamReportedBy")
+  userAccessLogs       UserAccessLog[]
+}
+
+model MedicalExam {
+  id               String             @id @default(uuid())
+  status           MedicalExamStatus  @default(PENDING)
+  processingResult String?
+  report           String?
+  uploadedById     String
+  reportedById     String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  uploadedBy   User          @relation("MedicalExamUploadedBy", fields: [uploadedById], references: [id])
+  reportedBy   User?         @relation("MedicalExamReportedBy", fields: [reportedById], references: [id])
+  examDocument ExamDocument?
+}
+
+model ExamDocument {
+  id            String   @id @default(uuid())
+  medicalExamId String   @unique
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  url           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  medicalExam MedicalExam @relation(fields: [medicalExamId], references: [id], onDelete: Cascade)
+}
+
+model UserAccessLog {
+  id          String   @id @default(uuid())
+  userId      String
+  module      String
+  useCase     String
+  action      String
+  description String
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([module, useCase])
+}
+
+model FailedMessage {
+  id            String   @id @default(uuid())
+  queue         String
+  payload       Json
+  headers       Json?
+  errorMessage  String
+  errorStack    String?
+  attempts      Int
+  firstFailedAt DateTime
+  lastFailedAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([queue, createdAt])
+}
