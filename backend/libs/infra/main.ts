@@ -47,9 +47,9 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(port, () => {
+  await app.listen(port, '0.0.0.0', () => {
     Logger.log(`Running in ${nodeEnv} mode`, 'Bootstrap');
-    Logger.log(`Listening on port ${port}`, 'Bootstrap');
+    Logger.log(`Listening on 0.0.0.0:${port}`, 'Bootstrap');
     if (!isProduction) {
       Logger.log(
         `Swagger docs available at http://localhost:${port}/docs`,
